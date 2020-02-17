@@ -256,9 +256,9 @@ class Orientation(Packet):
         data = np.copy(np.frombuffer(bin_data, dtype=np.dtype(np.int16).newbyteorder('<'))).astype(np.float)
         self.acc = 0.061 * data[0:3]  # Unit [mg/LSB]
         self.gyro = 8.750 * data[3:6]  # Unit [mdps/LSB]
-        self.mag = 1.52 *  np.multiply (data[6:], np.array([-1, 1, 1]))  # Unit [mgauss/LSB]
-        self.theta = None
-        self.rot_axis = None
+        self.mag = 1.52 * np.multiply (data[6:], np.array([-1, 1, 1]))  # Unit [mgauss/LSB]
+        self.theta = 0
+        self.rot_axis = np.zeros(3, dtype=float)
 
     def _check_fletcher(self, fletcher):
         assert fletcher == b'\xaf\xbe\xad\xde', "Fletcher error!"
@@ -271,7 +271,8 @@ class Orientation(Packet):
                                      self.gyro.tolist() + self.mag.tolist())[:, np.newaxis])
 
     def push_to_lsl(self, outlet):
-        outlet.push_sample(self.acc.tolist() + self.gyro.tolist() + self.mag.tolist())
+        outlet.push_sample(self.acc.tolist() + self.gyro.tolist() + self.mag.tolist() +
+                           np.append(self.rot_axis, self.theta).tolist())
 
     def push_to_dashboard(self, dashboard):
         data = self.acc.tolist() + self.gyro.tolist() + self.mag.tolist()

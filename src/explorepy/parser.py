@@ -6,6 +6,7 @@ from explorepy.packet import PACKET_ID, PACKET_CLASS_DICT, TimeStamp, EEG, Envir
 from explorepy.filters import Filter
 import copy
 import time
+import csv
 
 
 def generate_packet(pid, timestamp, bin_data):
@@ -30,7 +31,7 @@ def generate_packet(pid, timestamp, bin_data):
 
 
 class Parser:
-    def __init__(self, bp_freq=None, notch_freq=None, socket=None, fid=None):
+    def __init__(self, bp_freq=None, notch_freq=None, socket=None, fid=None, calibration_file=None):
         """Parser class for explore device
 
         Args:
@@ -38,6 +39,7 @@ class Parser:
             fid (file object): File object for reading data (Should be None if socket is provided)
             bp_freq (tuple): Tuple of cut-off frequencies of bandpass filter (low cut-off frequency, high cut-off frequency)
             notch_freq (int): Notch filter frequency (50 or 60 Hz)
+            calibration_file (str): Calibration data file name
         """
         self.socket = socket
         self.fid = fid
@@ -69,6 +71,19 @@ class Parser:
         packet = None
         while not isinstance(packet, DeviceInfo):
             packet = self.parse_packet(mode=None)
+        packet_counter = 0
+        if calibration_file is not None:
+            with open(calibration_file, "r") as f_calibre:
+                csv_reader_calibre = csv.reader(f_calibre, delimiter=",")
+                calibre_set = list(csv_reader_calibre)
+                self.calibre_set = np.asarray(calibre_set[1], dtype=np.float64)
+            while self.init_set is None:
+                self.parse_packet(mode="initialize")
+                packet_counter = packet_counter + 1
+                if packet_counter>15:
+                    print("Please make sure the orientation sensors are active. " +
+                          "Failed to initialize the orientation calculation block!")
+                    break
         self.signal_dc = np.zeros((self.n_chan,), dtype=np.float)
 
     @property
@@ -126,6 +141,8 @@ class Parser:
 
         elif mode == "lsl":
             if isinstance(packet, Orientation):
+                if self.init_set is not None:
+                    packet = self._compute_NED(packet)
                 packet.push_to_lsl(outlets[0])
             elif isinstance(packet, EEG):
                 packet.push_to_lsl(outlets[1])
@@ -144,7 +161,7 @@ class Parser:
                 #     self.signal_dc = (self.bp_freq[0] / (self.fs*0.5)) * packet.data[:, column] + (
                 #             1 - (self.bp_freq[0] / (self.fs*0.5))) * self.signal_dc
                 #     packet.data[:, column] = packet.data[:, column] - self.signal_dc
-            if isinstance(packet, Orientation) and self.calibre_set is not None:
+            if isinstance(packet, Orientation) and self.init_set is not None:
                 packet = self._compute_NED(packet)
             packet.push_to_dashboard(dashboard)
 

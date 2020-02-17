@@ -16,10 +16,11 @@ from threading import Thread, Timer
 
 class Explore:
     r"""Mentalab Explore device"""
-    def __init__(self, n_device=1):
+    def __init__(self, n_device=1, calibre_file=None):
         r"""
         Args:
             n_device (int): Number of devices to be connected
+            calibre_file (str): Calibration data file name
         """
         self.device = []
         self.socket = None
@@ -29,6 +30,7 @@ class Explore:
             self.device.append(BtClient())
         self.is_connected = False
         self.is_acquiring = None
+        self.calibration_file = calibre_file
 
     def connect(self, device_name=None, device_addr=None, device_id=0):
         r"""
@@ -45,7 +47,7 @@ class Explore:
         if self.socket is None:
             self.socket = self.device[device_id].bt_connect()
         if self.parser is None:
-            self.parser = Parser(socket=self.socket)
+            self.parser = Parser(socket=self.socket, calibration_file=self.calibration_file)
         self.is_connected = True
         packet = None
 
@@ -185,7 +187,7 @@ class Explore:
 
         assert self.is_connected, "Explore device is not connected. Please connect the device first."
 
-        info_orn = StreamInfo('Explore', 'Orientation', 9, 20, 'float32', 'ORN')
+        info_orn = StreamInfo('Explore', 'Orientation', 13, 20, 'float32', 'ORN')
         info_exg = StreamInfo('Explore', 'ExG', self.parser.n_chan, self.parser.fs, 'float32', 'ExG')
         info_marker = StreamInfo('Explore', 'Markers', 1, 0, 'int32', 'Marker')
 
@@ -223,20 +225,12 @@ class Explore:
             bp_freq (tuple): Bandpass filter cut-off frequencies (low_cutoff_freq, high_cutoff_freq), No bandpass filter
             if it is None.
             notch_freq (int): Line frequency for notch filter (50 or 60 Hz), No notch filter if it is None
-            calibre_file (str): Calibration data file name
         """
-        import numpy as np
         assert self.is_connected, "Explore device is not connected. Please connect the device first."
-        if calibre_file is not None:
-            with open(calibre_file, "r") as f_calibre:
-                csv_reader_calibre = csv.reader(f_calibre, delimiter=",")
-                calibre_set = list(csv_reader_calibre)
-                self.parser.calibre_set = np.asarray(calibre_set[1], dtype=np.float64)
         self.parser.notch_freq = notch_freq
         if bp_freq is not None:
             self.parser.apply_bp_filter = True
             self.parser.bp_freq = bp_freq
-
         self.m_dashboard = Dashboard(n_chan=self.parser.n_chan,
                                      exg_fs=self.parser.fs,
                                      firmware_version=self.parser.firmware_version)
@@ -249,43 +243,23 @@ class Explore:
 
     def _io_loop(self, device_id=0, mode="visualize"):
         self.is_acquiring = [True]
-        if self.parser.calibre_set is not None:
-            is_initialized = False
-        else:
-            is_initialized = True # flag as True since it doesn't matter and we skip orientation calculation process
         # Wait until dashboard is initialized.
         while not hasattr(self.m_dashboard, 'doc'):
             print('wait...')
             time.sleep(.5)
 
         while self.is_acquiring[0]:
-            if is_initialized:
+            try:
+                packet = self.parser.parse_packet(mode=mode, dashboard=self.m_dashboard)
+            except ConnectionAbortedError:
+                print("Device has been disconnected! Scanning for last connected device...")
                 try:
-                    packet = self.parser.parse_packet(mode=mode, dashboard=self.m_dashboard)
-                except ConnectionAbortedError:
-                    print("Device has been disconnected! Scanning for last connected device...")
-                    try:
-                        self.parser.socket = self.device[device_id].bt_connect()
-                    except DeviceNotFoundError as e:
-                        print(e)
-                        self.is_acquiring[0] = False
-                        if mode == "visualize":
-                            os._exit(0)
-            else:
-                try:
-                    packet = self.parser.parse_packet(mode="initialize", dashboard=self.m_dashboard)
-                    if hasattr(packet, 'acc'):
-                        if self.parser.init_set is not None:
-                            is_initialized = True
-                except ConnectionAbortedError:
-                    print("Device has been disconnected! Scanning for last connected device...")
-                    try:
-                        self.parser.socket = self.device[device_id].bt_connect()
-                    except DeviceNotFoundError as e:
-                        print(e)
-                        self.is_acquiring[0] = False
-                        if mode == "visualize":
-                            os._exit(0)
+                    self.parser.socket = self.device[device_id].bt_connect()
+                except DeviceNotFoundError as e:
+                    print(e)
+                    self.is_acquiring[0] = False
+                    if mode == "visualize":
+                        os._exit(0)
         os.exit(0)
 
     def signal_handler(self, signal, frame):

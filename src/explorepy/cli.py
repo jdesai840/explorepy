@@ -42,7 +42,6 @@ class CLI:
 
     @staticmethod
     def record_data():
-        explore = Explore()
         parser = argparse.ArgumentParser(
             description='Record data from a device with Specified name')
 
@@ -68,7 +67,13 @@ class CLI:
                             dest="file_type", type=str, default='edf',
                             help="File type (edf or csv).")
 
+        parser.add_argument("-cf", "--calibration_file",
+                            dest="cf", type=str, default=None,
+                            help="Calibration file name")
+
         args = parser.parse_args(sys.argv[2:])
+
+        explore = Explore(calibre_file=args.cf)
 
         if args.name is None:
             explore.connect(device_addr=args.address)
@@ -81,7 +86,6 @@ class CLI:
 
     @staticmethod
     def push2lsl():
-        explore = Explore()
         parser = argparse.ArgumentParser(
             description='Push data to lsl')
 
@@ -93,7 +97,13 @@ class CLI:
                             dest="name", type=str, default=None,
                             help="Name of the device.")
 
+        parser.add_argument("-cf", "--calibration_file",
+                            dest="cf", type=str, default=None,
+                            help="Calibration file name")
+
         args = parser.parse_args(sys.argv[2:])
+
+        explore = Explore(calibre_file=args.cf)
 
         if args.name is None:
             explore.connect(device_addr=args.address)
@@ -135,8 +145,6 @@ class CLI:
 
     @staticmethod
     def visualize():
-        explore = Explore()
-
         parser = argparse.ArgumentParser(
             description='Visualizing signal in a browser-based dashboard')
 
@@ -166,13 +174,15 @@ class CLI:
 
         args = parser.parse_args(sys.argv[2:])
 
+        explore = Explore(calibre_file=args.cf)
+
         if args.name is None:
             explore.connect(device_addr=args.address)
         else:
             explore.connect(device_name=args.name)
 
         if (args.lf is not None) and (args.hf is not None):
-            explore.visualize(notch_freq=args.notchfreq, bp_freq=(args.lf, args.hf), calibre_file=args.cf)
+            explore.visualize(notch_freq=args.notchfreq, bp_freq=(args.lf, args.hf))
         else:
             explore.visualize(notch_freq=args.notchfreq, bp_freq=None, calibre_file=args.cf)
 
