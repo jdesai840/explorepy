@@ -18,6 +18,7 @@ class OpcodeID(Enum):
     CMD_ZM_DISABLE = b'\xA6'
     CMD_ZM_ENABLE = b'\xA7'
     CMD_SOFT_RESET = b'\xA8'
+    CMD_INFO_REQ = b'\xA9'
 
 
 class DeliveryState(Enum):
@@ -246,6 +247,28 @@ class SoftReset(Command2B):
     def __str__(self):
         return "Reset command"
 
+
+class InfoReq(Command2B):
+    def __init__(self, info):
+        """Gets the requested info and initializes the packet
+
+        Args:
+            info (str): requested info, It should be one of these values: "ExG_config" or "calibration"
+        """
+        super().__init__()
+        self.opcode = OpcodeID.CMD_INFO_REQ
+        if info == "ExG_config":
+            self.param = b'\x00'
+        elif info == "calibration":
+            self.param = b'\x01'
+        else:
+            raise ValueError("Invalid input")
+
+        self.get_time()
+        self.delivery_state = DeliveryState.NOT_SENT
+
+    def __str__(self):
+        return "Info request command"
 
 def send_command(command, socket):
     """Send a command to the device
