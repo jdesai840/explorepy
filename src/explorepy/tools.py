@@ -60,6 +60,7 @@ def bin2csv(bin_file, do_overwrite=False, out_dir=''):
         exg_recorder = create_exg_recorder(filename=exg_file_name,
                                            file_type='csv',
                                            adc_mask=parser.adc_mask,
+                                           fs=parser.fs,
                                            do_overwrite=do_overwrite)
         orn_recorder = create_orn_recorder(filename=orn_file_name,
                                            file_type='csv',
