@@ -105,6 +105,7 @@ class StreamProcessor:
         elif isinstance(packet, DeviceInfo):
             self.old_device_info = self.device_info
             self.device_info = packet.get_info()
+            print(packet)
             self.dispatch(topic=TOPICS.device_info, packet=packet)
         elif isinstance(packet, CommandRCV):
             self.dispatch(topic=TOPICS.cmd_ack, packet=packet)

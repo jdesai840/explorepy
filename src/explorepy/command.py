@@ -25,6 +25,7 @@ class OpcodeID(Enum):
     CMD_ZM_DISABLE = b'\xA6'
     CMD_ZM_ENABLE = b'\xA7'
     CMD_SOFT_RESET = b'\xA8'
+    CMD_CH_SET_TEST = b'\xAA'
 
 
 class Result(Enum):
@@ -291,6 +292,25 @@ class SoftReset(Command2B):
 
     def __str__(self):
         return "Reset command"
+
+
+class SetChTest(Command2B):
+    """Change channel mask command"""
+    def __init__(self, ch_mask):
+        """
+
+        Args:
+            ch_mask (int): ExG channel mask. It should be integers between 1 and 255.
+        """
+        super().__init__()
+        self.opcode = OpcodeID.CMD_CH_SET_TEST
+        if 1 <= ch_mask <= 255:
+            self.param = bytes([ch_mask])
+        else:
+            raise ValueError("Invalid input")
+
+    def __str__(self):
+        return "Channel set command with test signal"
 
 
 COMMAND_CLASS_DICT = {
