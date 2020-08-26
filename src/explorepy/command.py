@@ -63,12 +63,14 @@ class DeviceConfiguration:
         self._last_ack_message = None
         self._last_status_message = None
         self._send_command(command)
+        print(datetime.now())
         print("waiting for ack and status messages...")
         cmd_received = False
         for _ in range(10):
             if not self._last_ack_message:
                 time.sleep(1)
             elif int2bytearray(self._last_ack_message.opcode, 1) == command.opcode.value:
+                print(datetime.now())
                 print("Command has been received by Explore")
                 cmd_received = True
                 self._last_ack_message = None
@@ -304,7 +306,7 @@ class SetChTest(Command2B):
         """
         super().__init__()
         self.opcode = OpcodeID.CMD_CH_SET_TEST
-        if 1 <= ch_mask <= 255:
+        if 0 <= ch_mask <= 255:
             self.param = bytes([ch_mask])
         else:
             raise ValueError("Invalid input")
