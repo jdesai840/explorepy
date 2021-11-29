@@ -165,7 +165,7 @@ Visualizes the electrode impedances in a browser  dashboard. Currently, Chrome i
 
 .. note::  It is recommended to restart the device after impedance measurement as the mechanism may introduce external noise.
 
-.. note:: Impedance value shown for each electrode is the sum of impedances of ground electrode and corresponding ExG electrode.
+.. note:: The impedance value displayed for each channel also depends on the impedance of the reference electrode. If all channel’s impedances are high, try cleaning the skin under the reference electrode more thoroughly (e.g. with alcohol, abrasive gel, EEG gel).
 
 .. note::  The accuracy of measured impedances are subject to environmental conditions such as noise and temperature.
 
@@ -383,7 +383,7 @@ To measure electrodes impedances::
   :width: 800
   :alt: Impedance Dashboard
 
-.. note:: Impedance value shown for each electrode is the sum of impedances of ground electrode and corresponding ExG electrode. This can make the impedances appear higher than they actually are. Make sure your ground is well prepared, when facing issues in getting to low impedances.
+.. note:: The impedance value displayed for each channel also depends on the impedance of the reference electrode. If all channel’s impedances are high, try cleaning the skin under the reference electrode more thoroughly (e.g. with alcohol, abrasive gel, EEG gel).
 
 .. note::  The accuracy of measured impedances are subject to environmental conditions such as noise and temperature. Therefore, this works best at regular room temperatures (~15-25 °C).
 
