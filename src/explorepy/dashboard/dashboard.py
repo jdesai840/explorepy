@@ -247,6 +247,7 @@ class Dashboard:
             color = []
             imp_status = []
             for value in imp:
+                value /= 2
                 if value > 500:
                     color.append("black")
                     imp_status.append("Open")
