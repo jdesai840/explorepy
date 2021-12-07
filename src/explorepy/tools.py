@@ -9,7 +9,7 @@ from contextlib import closing
 import numpy as np
 from scipy import signal
 import pyedflib
-from pylsl import StreamInfo, StreamOutlet, local_clock
+#from pylsl import StreamInfo, StreamOutlet, local_clock
 import configparser
 from appdirs import user_cache_dir, user_config_dir
 import logging
